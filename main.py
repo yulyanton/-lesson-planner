@@ -36,6 +36,14 @@ class Lesson:
         date_obj = datetime.strptime(date_str, '%Y.%m.%d').date()
         return cls(date_obj, class_str, teacher_str)
 
-s = input()
-i = Lesson.str_to_lesson(s)
-print(i)
+filename = "input.txt"
+lessons = []
+
+with open(filename, 'r', encoding='utf-8') as file:
+    for line in file:
+        line = line.strip()
+        lesson = Lesson.str_to_lesson(line)
+        lessons.append(lesson)
+for i, lesson in enumerate(lessons, 1):
+    print(f"\nУрок {i}:")
+    print(lesson)
