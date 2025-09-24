@@ -47,3 +47,18 @@ with open(filename, 'r', encoding='utf-8') as file:
 for i, lesson in enumerate(lessons, 1):
     print(f"\nУрок {i}:")
     print(lesson)
+
+sorted_lessons = sorted(lessons, key=lambda x: x.date)
+
+print("\n\nОтсортированный список уроков по дате\n")
+for i, lesson in enumerate(sorted_lessons, 1):
+    print(lesson, "\n")
+
+    #
+    # сортировка по дате. в виде списка отсортированного вывести.
+    # и сделать фильт по аудитории
+    #
+    #
+    # скооперироваться с человеком и добавить проверку на пересечение занятий в аудитории.
+    # мердж реквест обработать
+
