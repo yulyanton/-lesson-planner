@@ -16,22 +16,17 @@ class Lesson:
 
     @classmethod
     def str_to_lesson(cls, s: str):
-        parts = re.findall(r'[^"\s]\S*|"[^"]*"', s)
+        date_str = re.search(r'(19|20)\d{2}\.(0[1-9]|1[0-2])\.(0[1-9]|[12][0-9]|3[01])', s).group()
 
-        date_str = None
-        class_str = None
-        teacher_str = None
-        for part in parts:
-            clean_value = part.strip('"')
+        class_match =re.search(r'"([1-5]-(?:0[1-9]|1[0-9]|20))"', s)
+        class_str = class_match.group(1) if class_match else None
+        print(class_str)
 
-            if re.match(r'^(19|20)\d{2}\.(0[1-9]|1[0-2])\.(0[1-9]|[12][0-9]|3[01])$', clean_value):
-                date_str = clean_value
+        teacher_match = re.search(r'"([а-яА-ЯёЁ\s\.]{2,})"', s)
+        teacher_str = teacher_match.group(1) if teacher_match else None
+        print(teacher_str)
 
-            elif re.match(r'^[1-5]-(?:[1-9]|1[0-9]|20)$', clean_value):
-                class_str = clean_value
 
-            elif re.match(r'^[а-яА-ЯёЁ\s\.]+$', clean_value):
-                teacher_str = clean_value
 
         date_obj = datetime.strptime(date_str, '%Y.%m.%d').date()
         return cls(date_obj, class_str, teacher_str)
@@ -67,8 +62,6 @@ if filtered_lessons:
         print(lesson, "\n")
 else:
     print("Нет уроков в этой аудитории.")
-    #
-    #
-    # скооперироваться с человеком и добавить проверку на пересечение занятий в аудитории.
-    # мердж реквест обработать
+
+
 
