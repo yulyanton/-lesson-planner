@@ -71,7 +71,7 @@ for i, lesson in enumerate(lessons, 1):
 
 sorted_lessons = sorted(lessons, key=lambda x: x.date)
 
-print("\n\nОтсортированный список уроков по дате\n")
+print("\nОтсортированный список уроков по дате\n")
 for i, lesson in enumerate(sorted_lessons, 1):
     print(lesson, "\n")
 
@@ -83,11 +83,10 @@ if conflicts:
         date_str = group[0].date.strftime('%Y.%m.%d')
         class_name = group[0].class_name
         print(f"\nКонфликт: в аудитории '{class_name}' на дату {date_str}")
-        print("В это время запланированы следующие уроки:")
+        print("В эту дату запланированы следующие уроки:")
         sorted_group = sorted(group, key=lambda x: x.start_time)
         for lesson in sorted_group:
-            print("-" * 20)
-            print(f"{str(lesson)}")
+            print(f"\n{str(lesson)}")
 
 print("\nВведите название аудитории для вывода уроков в ней: ")
 auditory = input()
