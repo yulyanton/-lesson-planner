@@ -70,7 +70,7 @@ for i, lesson in enumerate(lessons, 1):
     print(f"\nУрок {i}:")
     print(lesson)
 
-conflicts = find_conflicts(lessons)
+conflicts = find_conflict(lessons)
 if conflicts:
     for i, group in enumerate(conflicts, 1):
         date_str = group[0].date.strftime('%d.%m.%Y')
