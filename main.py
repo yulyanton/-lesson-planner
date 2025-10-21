@@ -57,6 +57,7 @@ def find_conflict(lessons_list):
 
     return conflicting_groups
 
+
 filename = "input.txt"
 lessons = []
 
@@ -69,36 +70,36 @@ for i, lesson in enumerate(lessons, 1):
     print(f"\nУрок {i}:")
     print(lesson)
 
-sorted_lessons = sorted(lessons, key=lambda x: x.date)
-
-print("\n\nОтсортированный список уроков по дате\n")
-for i, lesson in enumerate(sorted_lessons, 1):
-    print(lesson, "\n")
-
-conflicts = find_conflict(lessons)
-
+conflicts = find_conflicts(lessons)
 if conflicts:
-    print("Найдены пересечения уроков:")
     for i, group in enumerate(conflicts, 1):
-        date_str = group[0].date.strftime('%Y.%m.%d')
+        date_str = group[0].date.strftime('%d.%m.%Y')
         class_name = group[0].class_name
-        print(f"\nКонфликт: в аудитории '{class_name}' на дату {date_str}")
-        print("В это время запланированы следующие уроки:")
+        print(f"\nКонфликт №{i}: Аудитория '{class_name}' на {date_str}")
+
         sorted_group = sorted(group, key=lambda x: x.start_time)
         for lesson in sorted_group:
             print("-" * 20)
-            print(f"{str(lesson)}")
+            print(str(lesson))
+else:
+    print("\nПересечений в расписании не найдено.")
 
-print("\nВведите название аудитории для вывода уроков в ней: ")
-auditory = input()
+print("\n" + "-" * 25)
+unique_classrooms = sorted(list({lesson.class_name for lesson in lessons}))
+print("Доступные аудитории:", ", ".join(unique_classrooms))
+
+auditory = input("Введите название аудитории для вывода расписания: ")
 filtered_lessons = []
 for lesson in lessons:
     if lesson.class_name == auditory:
         filtered_lessons.append(lesson)
 
-print(f"\nУроки в аудитории {auditory}\n")
+filtered_lessons.sort(key=lambda x: (x.date, x.start_time))
+
+print(f"\n--- Расписание для аудитории '{auditory}' ---")
 if filtered_lessons:
-    for i, lesson in enumerate(filtered_lessons, 1):
-        print(lesson, "\n")
+    for lesson in filtered_lessons:
+        print(lesson)
+        print("-" * 20)
 else:
-    print("Нет уроков в этой аудитории.")
+    print("Нет занятий в этой аудитории или аудитория указана неверно.")
