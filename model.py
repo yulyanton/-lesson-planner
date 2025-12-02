@@ -66,8 +66,6 @@ class Schedule:
         try:
             with open(sFilename, 'r', encoding='utf-8') as f:
                 for sLine in f:
-                    sLine = sLine.strip()
-                    if not sLine: continue
                     try:
                         oLesson = Lesson.create_from_string(sLine)
                         self._lstLessons.append(oLesson)

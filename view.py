@@ -21,13 +21,12 @@ class ConsoleView:
         return input("Введите номер аудитории: ").strip()
 
     def show_list(self, lstData: List[Any], sHeader: str):
-        print(f"\n--- {sHeader} ---")
+        print(f"\n{sHeader}")
         if not lstData:
             print("Список пуст.")
         else:
             for item in lstData:
                 print(str(item))
-            print("-" * 20)
 
     def show_conflicts(self, dctConflicts: Dict[str, List[Any]]):
         if not dctConflicts:
