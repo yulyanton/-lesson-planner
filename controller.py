@@ -3,39 +3,44 @@ from view import ConsoleView
 
 class AppController:
     def __init__(self):
-        self.oModel = Schedule()
-        self.oView = ConsoleView()
-        self.sFilename = "input.txt"
+        self.model = Schedule()
+        self.view = ConsoleView()
+        self.filename = "input.txt"
 
     def run(self):
-        sStatus = self.oModel.load_data(self.sFilename)
-        self.oView.show_message(f"Старт программы. {sStatus}")
+        status = self.model.load_data(self.filename)
+        self.view.show_message(f"Старт программы. {status}")
 
         while True:
-            sChoice = self.oView.show_menu()
+            choice = self.view.show_menu()
 
-            if sChoice == '1':
-                self._handle_show_all()
-            elif sChoice == '2':
-                self._handle_conflicts()
-            elif sChoice == '3':
-                self._handle_filter()
-            elif sChoice == '0':
-                self.oView.show_message("Выход.")
+            if choice == "1":
+                self.view.show_list(
+                    self.model.get_all_lessons(), "Все занятия"
+                )
+            elif choice == "2":
+                self.view.show_conflicts(self.model.find_conflicts())
+            elif choice == "3":
+                rooms = self.model.get_unique_classrooms()
+                target = self.view.get_classroom_input(rooms)
+                lessons = self.model.get_lessons_by_classroom(target)
+                self.view.show_list(lessons, f"Расписание: {target}")
+            elif choice == "0":
+                self.view.show_message("Выход.")
                 break
             else:
-                self.oView.show_error("Неверная команда.")
+                self.view.show_error("Неверная команда.")
 
     def _handle_show_all(self):
-        lstLessons = self.oModel.get_all_lessons()
-        self.oView.show_list(lstLessons, "Все занятия")
+        lstLessons = self.model.get_all_lessons()
+        self.view.show_list(lstLessons, "Все занятия")
 
     def _handle_conflicts(self):
-        dctConfl = self.oModel.find_conflicts()
-        self.oView.show_conflicts(dctConfl)
+        dctConfl = self.model.find_conflicts()
+        self.view.show_conflicts(dctConfl)
 
     def _handle_filter(self):
-        lstRooms = self.oModel.get_unique_classrooms()
-        sTarget = self.oView.get_classroom_input(lstRooms)
-        lstFiltered = self.oModel.get_lessons_by_classroom(sTarget)
-        self.oView.show_list(lstFiltered, f"Расписание: {sTarget}")
+        lstRooms = self.model.get_unique_classrooms()
+        sTarget = self.view.get_classroom_input(lstRooms)
+        lstFiltered = self.model.get_lessons_by_classroom(sTarget)
+        self.view.show_list(lstFiltered, f"Расписание: {sTarget}")

@@ -6,105 +6,146 @@ from typing import List, Dict, Tuple
 from exceptions import ParseError, ValidationError
 
 class Lesson:
-    def __init__(self, dDate: date, sClassName: str, sTeacherName: str, tStartTime: time, tEndTime: time):
-        self.dDate = dDate
-        self.sClassName = sClassName
-        self.sTeacherName = sTeacherName
-        self.tStartTime = tStartTime
-        self.tEndTime = tEndTime
 
-    def __str__(self):
-        return (f"Дата: {self.dDate.strftime('%Y.%m.%d')} | "
-                f"Ауд: {self.sClassName} | "
-                f"Преп: {self.sTeacherName} | "
-                f"Время: {self.tStartTime.strftime('%H:%M')}-{self.tEndTime.strftime('%H:%M')}")
+    DATE_PATTERN = r"(19|20)\d{2}\.(0[1-9]|1[0-2])\.(0[1-9]|[12][0-9]|3[01])"
+    CLASS_PATTERN = r'"(\d{1,2}-\d{2})"'
+    TEACHER_PATTERN = r'"([а-яА-ЯёЁa-zA-Z\s\.]{2,})"'
+    TIME_PATTERN = r'"(\d{2}:\d{2}-\d{2}:\d{2})"'
+
+    def __init__(
+            self,
+            lesson_date: date,
+            classroom: str,
+            teacher: str,
+            start_time: time,
+            end_time: time,
+    ):
+        self.lesson_date = lesson_date
+        self.classroom = classroom
+        self.teacher = teacher
+        self.start_time = start_time
+        self.end_time = end_time
+
+    def __str__(self) -> str:
+        return (
+            f"Дата: {self.lesson_date.strftime('%Y.%m.%d')} | "
+            f"Ауд: {self.classroom} | "
+            f"Преп: {self.teacher} | "
+            f"Время: {self.start_time.strftime('%H:%M')}-"
+            f"{self.end_time.strftime('%H:%M')}"
+        )
 
     @classmethod
-    def create_from_string(cls, sLine: str):
-        if not sLine or not sLine.strip():
+    def create_from_string(cls, line: str) -> "Lesson":
+        if not line or not line.strip():
             raise ParseError("Пустая строка")
 
-        oDateMatch = re.search(r'(19|20)\d{2}\.(0[1-9]|1[0-2])\.(0[1-9]|[12][0-9]|3[01])', sLine)
-        if not oDateMatch:
+        lesson_date = cls._parse_date(line)
+        classroom = cls._parse_classroom(line)
+        teacher = cls._parse_teacher(line)
+        start_time, end_time = cls._parse_time(line)
+
+        return cls(lesson_date, classroom, teacher, start_time, end_time)
+
+    @staticmethod
+    def _parse_date(line: str) -> date:
+        match = re.search(Lesson.DATE_PATTERN, line)
+        if not match:
             raise ParseError("Некорректная дата")
-        dDateObj = datetime.strptime(oDateMatch.group(), '%Y.%m.%d').date()
+        return datetime.strptime(match.group(), "%Y.%m.%d").date()
 
-        oClassMatch = re.search(r'"(\d{1,2}-\d{2})"', sLine)
-        if not oClassMatch:
+    @staticmethod
+    def _parse_classroom(line: str) -> str:
+        match = re.search(Lesson.CLASS_PATTERN, line)
+        if not match:
             raise ParseError("Некорректная аудитория")
-        sClassStr = oClassMatch.group(1)
-        sBuild, sRoom = sClassStr.split('-')
-        if not (1 <= int(sBuild) <= 5) or not (1 <= int(sRoom) <= 99):
-            raise ValidationError(f"Недопустимый номер аудитории: {sClassStr}")
 
-        oTeacherMatch = re.search(r'"([а-яА-ЯёЁa-zA-Z\s\.]{2,})"', sLine)
-        if not oTeacherMatch:
+        building, room = map(int, match.group(1).split("-"))
+        if not (1 <= building <= 5 and 1 <= room <= 99):
+            raise ValidationError("Недопустимый номер аудитории")
+
+        return match.group(1)
+
+    @staticmethod
+    def _parse_teacher(line: str) -> str:
+        match = re.search(Lesson.TEACHER_PATTERN, line)
+        if not match:
             raise ParseError("Не найдено имя преподавателя")
-        sTeacherStr = oTeacherMatch.group(1)
+        return match.group(1)
 
-        oTimeMatch = re.search(r'"(\d{2}:\d{2}-\d{2}:\d{2})"', sLine)
-        if not oTimeMatch:
+    @staticmethod
+    def _parse_time(line: str) -> tuple[time, time]:
+        match = re.search(Lesson.TIME_PATTERN, line)
+        if not match:
             raise ParseError("Не найдено время")
-        sStart, sEnd = oTimeMatch.group(1).split('-')
-        tStartObj = datetime.strptime(sStart, '%H:%M').time()
-        tEndObj = datetime.strptime(sEnd, '%H:%M').time()
 
-        if tStartObj >= tEndObj:
-            raise ValidationError("Начало урока должно быть раньше конца")
+        start_str, end_str = match.group(1).split("-")
+        start_time = datetime.strptime(start_str, "%H:%M").time()
+        end_time = datetime.strptime(end_str, "%H:%M").time()
 
-        return cls(dDateObj, sClassStr, sTeacherStr, tStartObj, tEndObj)
+        if start_time >= end_time:
+            raise ValidationError("Начало занятия позже окончания")
+
+        return start_time, end_time
 
 class Schedule:
-    def __init__(self):
-        self._lstLessons: List[Lesson] = []
 
-    def load_data(self, sFilename: str) -> str:
-        self._lstLessons = []
-        iSuccess = 0
-        iErrors = 0
+    def __init__(self):
+        self._lessons: List[Lesson] = []
+
+    def load_data(self, filename: str) -> str:
+        self._lessons.clear()
+        success, errors = 0, 0
 
         try:
-            with open(sFilename, 'r', encoding='utf-8') as f:
-                for sLine in f:
+            with open(filename, encoding="utf-8") as file:
+                for line in file:
                     try:
-                        oLesson = Lesson.create_from_string(sLine)
-                        self._lstLessons.append(oLesson)
-                        iSuccess += 1
-                    except Exception:
-                        iErrors += 1
-            return f"Загружено: {iSuccess}, Ошибок: {iErrors}"
+                        lesson = Lesson.create_from_string(line)
+                        self._lessons.append(lesson)
+                        success += 1
+                    except (ParseError, ValidationError):
+                        errors += 1
         except FileNotFoundError:
             return "Файл не найден."
 
-    def get_all_lessons(self) -> List[Lesson]:
-        return sorted(self._lstLessons, key=lambda x: (x.dDate, x.tStartTime))
+        return f"Загружено: {success}, Ошибок: {errors}"
 
-    def get_lessons_by_classroom(self, sClassroom: str) -> List[Lesson]:
-        lstResult = [l for l in self._lstLessons if l.sClassName == sClassroom]
-        return sorted(lstResult, key=lambda x: (x.dDate, x.tStartTime))
+    def get_all_lessons(self) -> List[Lesson]:
+        return sorted(self._lessons, key=lambda l: (l.lesson_date, l.start_time))
+
+    def get_lessons_by_classroom(self, classroom: str) -> List[Lesson]:
+        return sorted(
+            [l for l in self._lessons if l.classroom == classroom],
+            key=lambda l: (l.lesson_date, l.start_time),
+        )
 
     def get_unique_classrooms(self) -> List[str]:
-        return sorted(list({l.sClassName for l in self._lstLessons}))
+        return sorted({l.classroom for l in self._lessons})
 
     def find_conflicts(self) -> Dict[str, List[Lesson]]:
-        dctByKey = defaultdict(list)
-        for oLesson in self._lstLessons:
-            key = (oLesson.dDate, oLesson.sClassName)
-            dctByKey[key].append(oLesson)
+        grouped = defaultdict(list)
+        for lesson in self._lessons:
+            key = (lesson.lesson_date, lesson.classroom)
+            grouped[key].append(lesson)
 
-        dctConflicts = {}
+        conflicts = {}
+        for (lesson_date, classroom), lessons in grouped.items():
+            if len(lessons) < 2:
+                continue
 
-        for key, lstGroup in dctByKey.items():
-            if len(lstGroup) < 2: continue
+            conflict_set = set()
+            for first, second in combinations(lessons, 2):
+                if (
+                        first.start_time < second.end_time
+                        and first.end_time > second.start_time
+                ):
+                    conflict_set.update({first, second})
 
-            setConflicts = set()
-            for l1, l2 in combinations(lstGroup, 2):
-                if l1.tStartTime < l2.tEndTime and l1.tEndTime > l2.tStartTime:
-                    setConflicts.add(l1)
-                    setConflicts.add(l2)
+            if conflict_set:
+                key_str = f"{classroom} ({lesson_date.strftime('%d.%m.%Y')})"
+                conflicts[key_str] = sorted(
+                    conflict_set, key=lambda l: l.start_time
+                )
 
-            if setConflicts:
-                sKeyStr = f"{key[1]} ({key[0].strftime('%d.%m.%Y')})"
-                dctConflicts[sKeyStr] = sorted(list(setConflicts), key=lambda x: x.tStartTime)
-
-        return dctConflicts
+        return conflicts
